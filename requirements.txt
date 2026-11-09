@@ -1,0 +1,11 @@
+# 第 1 周:LLM 基础调用依赖
+openai>=1.40.0
+python-dotenv>=1.0.0
+
+# 后续周次将逐步加入(暂不安装):
+# langchain, langchain-community, langchain-openai
+# langgraph
+# chromadb
+# fastapi, uvicorn
+# streamlit
+# pypdf, docx2txt
