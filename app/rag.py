@@ -7,13 +7,15 @@ RAG 知识库问答命令行(第 2 周:核心交付物)
 
 运行方式(在项目根目录):
     # 第一次:先导入文档建立知识库
-    python app/rag.py ingest docs/你的文档.pdf
+    python -m app.rag ingest docs/你的文档.pdf
 
     # 然后问答
-    python app/rag.py chat
+    python -m app.rag chat
 """
 
+import os
 import sys
+from pathlib import Path
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -143,8 +145,8 @@ def cmd_chat() -> None:
 def main() -> None:
     if len(sys.argv) < 2:
         print("用法:")
-        print("  python app/rag.py ingest <文件或目录路径>   # 导入文档建立知识库")
-        print("  python app/rag.py chat                     # 交互式问答")
+        print("  python -m app.rag ingest <文件或目录路径>   # 导入文档建立知识库")
+        print("  python -m app.rag chat                     # 交互式问答")
         sys.exit(1)
 
     command = sys.argv[1]
@@ -161,6 +163,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    import os
-    from pathlib import Path
     main()

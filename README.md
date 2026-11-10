@@ -64,16 +64,16 @@ python app/chat.py
 
 ```bash
 # 导入单个文件
-python app/rag.py ingest docs/ai-agent-guide.md
+python -m app.rag ingest docs/ai-agent-guide.md
 
 # 或导入整个目录
-python app/rag.py ingest docs/
+python -m app.rag ingest docs/
 ```
 
 然后进入交互式问答:
 
 ```bash
-python app/rag.py chat
+python -m app.rag chat
 ```
 
 提问后,助手会检索知识库中的相关内容并**带引用作答**([资料1]、[资料2] 等)。
