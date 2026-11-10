@@ -1,11 +1,17 @@
-# 第 1 周:LLM 基础调用依赖
+# ===== 第 1 周:LLM 基础调用 =====
 openai>=1.40.0
 python-dotenv>=1.0.0
 
+# ===== 第 2 周:RAG 知识库 =====
+langchain-core>=1.0.0
+langchain-openai>=1.0.0
+langchain-community>=1.0.0
+langchain-chroma>=1.0.0
+chromadb>=0.5.0
+pypdf>=5.0.0
+docx2txt>=0.8
+
 # 后续周次将逐步加入(暂不安装):
-# langchain, langchain-community, langchain-openai
-# langgraph
-# chromadb
-# fastapi, uvicorn
-# streamlit
-# pypdf, docx2txt
+# langgraph          (第 3 周 Agent)
+# fastapi, uvicorn   (第 4 周后端)
+# streamlit          (第 4 周前端)
