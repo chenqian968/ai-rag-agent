@@ -78,6 +78,23 @@ python -m app.rag chat
 
 提问后,助手会检索知识库中的相关内容并**带引用作答**([资料1]、[资料2] 等)。
 
+### 5. 换一份自己的文档
+
+把你要问答的 PDF / Word / Markdown / TXT 文件放到 `docs/` 目录(或任意位置),然后重新导入:
+
+```bash
+# 1. (可选)想彻底换新文档时,先清空旧知识库,避免旧内容混入
+python -m app.rag reset
+
+# 2. 导入你自己的文档(替换成实际路径)
+python -m app.rag ingest docs/你的文档.pdf
+
+# 3. 问答
+python -m app.rag chat
+```
+
+> `reset` 会删除向量库数据(不影响你的源文档文件),导入时若想"追加"多个文档,跳过 reset 直接 ingest 即可。
+
 ## 项目结构
 
 ```

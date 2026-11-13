@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from app.loader import load_documents, load_documents_from_dir, split_documents
-from app.vectorstore import create_vector_store, load_vector_store, search
+from app.vectorstore import create_vector_store, load_vector_store, search, reset_vector_store
 
 load_dotenv()
 
@@ -146,6 +146,7 @@ def main() -> None:
     if len(sys.argv) < 2:
         print("用法:")
         print("  python -m app.rag ingest <文件或目录路径>   # 导入文档建立知识库")
+        print("  python -m app.rag reset                    # 清空知识库(换文档前先重置)")
         print("  python -m app.rag chat                     # 交互式问答")
         sys.exit(1)
 
@@ -155,6 +156,8 @@ def main() -> None:
             print("请提供要导入的文件或目录路径")
             sys.exit(1)
         cmd_ingest(sys.argv[2])
+    elif command == "reset":
+        reset_vector_store()
     elif command == "chat":
         cmd_chat()
     else:

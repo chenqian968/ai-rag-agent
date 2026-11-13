@@ -13,6 +13,7 @@
 """
 
 import os
+import shutil
 from typing import List
 
 from dotenv import load_dotenv
@@ -90,3 +91,17 @@ def search(
         相关文档块列表(按相似度从高到低)
     """
     return vector_store.similarity_search(query, k=top_k)
+
+
+def reset_vector_store() -> None:
+    """
+    清空向量库(删除持久化目录)。
+
+    用于"换文档"场景:先 reset,再 ingest 新文档,避免旧内容混入干扰回答。
+    """
+    dir_path = os.path.join(VECTOR_STORE_DIR)
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
+        print(f"✅ 已清空向量库目录: {dir_path}")
+    else:
+        print("向量库目录不存在,无需清空。")
