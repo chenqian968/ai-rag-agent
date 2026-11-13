@@ -33,8 +33,8 @@ LOADER_MAP = {
 }
 
 # 分块参数(可根据效果调优)
-CHUNK_SIZE = 500      # 每个文本块的最大字符数
-CHUNK_OVERLAP = 50    # 相邻块之间的重叠字符数
+CHUNK_SIZE = 300      # 每个文本块的最大字符数(调小,让条目式文档每个概念独立成块)
+CHUNK_OVERLAP = 30    # 相邻块之间的重叠字符数
 
 
 def load_documents(file_path: str | Path) -> List[Document]:

@@ -32,8 +32,8 @@ DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
 
 COLLECTION_NAME = "knowledge_base"
 
-# 检索相关块的数量
-TOP_K = 4
+# 检索相关块的数量(调大以提升召回率,确保关键定义块被检索到)
+TOP_K = 6
 
 
 def get_llm_client() -> OpenAI:
