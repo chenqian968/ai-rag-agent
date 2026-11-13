@@ -20,6 +20,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
+# 优先 IPv4,规避部分网络环境下的 DNS/IPv6 连接问题
+import app.network  # noqa: F401
+
 from app.loader import load_documents, load_documents_from_dir, split_documents
 from app.vectorstore import create_vector_store, load_vector_store, search, reset_vector_store
 

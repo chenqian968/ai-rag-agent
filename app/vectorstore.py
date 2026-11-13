@@ -21,6 +21,9 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
+# 优先 IPv4,规避部分网络环境下的 DNS/IPv6 连接问题
+import app.network  # noqa: F401
+
 load_dotenv()
 
 # 向量库持久化目录

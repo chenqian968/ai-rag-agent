@@ -22,6 +22,9 @@ import time
 from dotenv import load_dotenv
 from openai import OpenAI
 
+# 优先 IPv4,规避部分网络环境下的 DNS/IPv6 连接问题
+import app.network  # noqa: F401
+
 # 加载 .env 文件中的环境变量
 load_dotenv()
 
