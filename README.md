@@ -2,7 +2,7 @@
 
 基于 **RAG + AI Agent** 的垂直领域智能问答助手。目标岗位:大模型应用 / AI Agent 开发工程师。
 
-> 📌 当前进度:**第 3 周** — 已升级为 ReAct Agent(自主决策 + 工具调用 + 多轮记忆)。
+> 📌 当前进度:**第 4 周(完成)** — 已产品化:FastAPI 后端 + 网页界面 + Docker 部署。
 
 ## 技术栈
 
@@ -14,8 +14,9 @@
 | 向量库 | Chroma |
 | RAG 框架 | LangChain |
 | Agent 框架 | LangGraph(ReAct 循环 + Function Calling) |
-| 后端 | FastAPI(第 4 周加入) |
-| 前端 | Streamlit(第 4 周加入) |
+| 后端 | FastAPI + Uvicorn |
+| 前端 | 原生 HTML + CSS + JS(轻量,无需构建) |
+| 部署 | Docker |
 
 ## 快速开始
 
@@ -112,6 +113,32 @@ Agent 具备两个工具,会自己判断该用哪个:
 
 同时支持**多轮记忆**,能追问、能指代(比如先问市盈率,再问"那它和市净率有什么区别?"),Agent 能理解"它"指代上文。
 
+### 7. 网页版(第 4 周,推荐)
+
+启动后端服务,打开网页对话界面:
+
+```bash
+# 启动后端(默认 http://127.0.0.1:8000)
+python -m uvicorn app.api:app --host 127.0.0.1 --port 8000
+```
+
+然后在浏览器打开 http://127.0.0.1:8000/ ,即可:
+- 在网页上**上传文档**建立知识库
+- 与 Agent **对话问答**(支持多轮记忆)
+
+接口文档(自动生成):http://127.0.0.1:8000/docs
+
+### 8. Docker 一键部署(第 4 周)
+
+```bash
+# 方式一:docker compose(推荐)
+docker compose up -d
+
+# 方式二:直接构建运行
+docker build -t ai-rag-agent .
+docker run -p 8000:8000 --env-file .env ai-rag-agent
+```
+
 ## 项目结构
 
 ```
@@ -123,9 +150,15 @@ ai-rag-agent/
 │   ├── rag.py      # RAG 问答命令行(第 2 周)
 │   ├── tools.py    # Agent 工具定义(第 3 周)
 │   ├── agent.py    # ReAct Agent(LangGraph 编排,第 3 周)
-│   └── agent_cli.py # Agent 交互命令行(第 3 周)
+│   ├── agent_cli.py # Agent 交互命令行(第 3 周)
+│   └── api.py      # FastAPI 后端(第 4 周)
+├── frontend/       # 前端界面(第 4 周)
+│   ├── index.html
+│   └── static/     # css / js
 ├── data/           # 数据(向量库、上传文档等,已 gitignore)
 ├── docs/           # 文档、测试语料、架构图、技术笔记
+├── Dockerfile      # 容器镜像(第 4 周)
+├── docker-compose.yml
 ├── .env.example    # 环境变量模板
 └── requirements.txt
 ```
@@ -135,7 +168,7 @@ ai-rag-agent/
 - [x] 第 1 周:LLM 基础调用 + 环境搭建
 - [x] 第 2 周:RAG 知识库(文档分块 + Embedding + Chroma 检索)
 - [x] 第 3 周:Agent 化(工具调用 + 多轮记忆)
-- [ ] 第 4 周:FastAPI + Streamlit + Docker 上线
+- [x] 第 4 周:FastAPI + 网页前端 + Docker 上线
 
 ## License
 

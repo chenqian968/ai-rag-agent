@@ -14,6 +14,7 @@ docx2txt>=0.8
 # ===== 第 3 周:Agent 化(ReAct + 工具调用 + 多轮记忆) =====
 langgraph>=0.2.0
 
-# 后续周次将逐步加入(暂不安装):
-# fastapi, uvicorn   (第 4 周后端)
-# streamlit          (第 4 周前端)
+# ===== 第 4 周:产品化(FastAPI 后端 + 前端) =====
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 知识库问答 Agent</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- 侧边栏:知识库管理 -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-dot"></div>
+                <span>AI 知识库问答</span>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>知识库</h3>
+                <p class="hint">上传 PDF / Word / Markdown / TXT,建立你的专属知识库</p>
+
+                <label class="upload-btn" for="file-input">
+                    上传文档
+                </label>
+                <input type="file" id="file-input" accept=".pdf,.docx,.txt,.md" hidden>
+
+                <div id="upload-status" class="upload-status"></div>
+
+                <button id="reset-btn" class="reset-btn">清空知识库</button>
+            </div>
+
+            <div class="sidebar-footer">
+                <p>基于 LangChain + LangGraph + Chroma</p>
+            </div>
+        </aside>
+
+        <!-- 主区域:对话 -->
+        <main class="chat-area">
+            <div class="chat-header">
+                <h2>智能问答助手</h2>
+                <p class="subtitle">可检索知识库 · 可计算 · 多轮记忆</p>
+            </div>
+
+            <div id="chat-messages" class="chat-messages">
+                <div class="message assistant">
+                    <div class="avatar">AI</div>
+                    <div class="bubble">
+                        你好!我是你的知识库问答助手。<br>
+                        你可以问我知识库里的问题,也可以让我帮你做计算。试试:<br>
+                        · "什么是市盈率PE?"<br>
+                        · "10万本金年化5%一年多少利息?"
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="chat-input-box">
+                    <textarea id="chat-input" rows="1" placeholder="输入你的问题..."></textarea>
+                    <button id="send-btn" class="send-btn">发送</button>
+                </div>
+                <p class="input-hint">Enter 发送,Shift+Enter 换行</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
