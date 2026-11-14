@@ -2,7 +2,7 @@
 
 基于 **RAG + AI Agent** 的垂直领域智能问答助手。目标岗位:大模型应用 / AI Agent 开发工程师。
 
-> 📌 当前进度:**第 2 周** — RAG 知识库已实现(文档加载 → 分块 → Embedding → Chroma 检索 → 带引用问答)。
+> 📌 当前进度:**第 3 周** — 已升级为 ReAct Agent(自主决策 + 工具调用 + 多轮记忆)。
 
 ## 技术栈
 
@@ -13,7 +13,7 @@
 | Embedding | 硅基流动 BAAI/bge-m3 |
 | 向量库 | Chroma |
 | RAG 框架 | LangChain |
-| Agent 框架 | LangGraph(第 3 周加入) |
+| Agent 框架 | LangGraph(ReAct 循环 + Function Calling) |
 | 后端 | FastAPI(第 4 周加入) |
 | 前端 | Streamlit(第 4 周加入) |
 
@@ -95,6 +95,23 @@ python -m app.rag chat
 
 > `reset` 会删除向量库数据(不影响你的源文档文件),导入时若想"追加"多个文档,跳过 reset 直接 ingest 即可。
 
+### 6. ReAct Agent 对话(第 3 周)
+
+第 2 周是"固定检索→生成"的流水线;第 3 周升级为**能自主决策的 Agent**:
+
+```bash
+python -m app.agent_cli
+```
+
+Agent 具备两个工具,会自己判断该用哪个:
+
+| 工具 | 作用 | 示例问题 |
+|---|---|---|
+| `search_knowledge` | 检索知识库 | "什么是市盈率PE?" |
+| `calculate` | 数值计算 | "10万本金年化5%一年多少利息?" |
+
+同时支持**多轮记忆**,能追问、能指代(比如先问市盈率,再问"那它和市净率有什么区别?"),Agent 能理解"它"指代上文。
+
 ## 项目结构
 
 ```
@@ -103,7 +120,10 @@ ai-rag-agent/
 │   ├── chat.py     # 命令行聊天(第 1 周)
 │   ├── loader.py   # 文档加载与分块(第 2 周)
 │   ├── vectorstore.py  # 向量库与检索(第 2 周)
-│   └── rag.py      # RAG 问答命令行(第 2 周)
+│   ├── rag.py      # RAG 问答命令行(第 2 周)
+│   ├── tools.py    # Agent 工具定义(第 3 周)
+│   ├── agent.py    # ReAct Agent(LangGraph 编排,第 3 周)
+│   └── agent_cli.py # Agent 交互命令行(第 3 周)
 ├── data/           # 数据(向量库、上传文档等,已 gitignore)
 ├── docs/           # 文档、测试语料、架构图、技术笔记
 ├── .env.example    # 环境变量模板
@@ -114,7 +134,7 @@ ai-rag-agent/
 
 - [x] 第 1 周:LLM 基础调用 + 环境搭建
 - [x] 第 2 周:RAG 知识库(文档分块 + Embedding + Chroma 检索)
-- [ ] 第 3 周:Agent 化(工具调用 + 多轮记忆)
+- [x] 第 3 周:Agent 化(工具调用 + 多轮记忆)
 - [ ] 第 4 周:FastAPI + Streamlit + Docker 上线
 
 ## License
