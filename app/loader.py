@@ -33,7 +33,7 @@ LOADER_MAP = {
 }
 
 # 分块参数(可根据效果调优)
-CHUNK_SIZE = 300      # 每个文本块的最大字符数(调小,让条目式文档每个概念独立成块)
+CHUNK_SIZE = 300      # 每个文本块的最大字符数
 CHUNK_OVERLAP = 30    # 相邻块之间的重叠字符数
 
 
@@ -109,8 +109,19 @@ def split_documents(
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        # 切分优先级:优先按段落、句子等自然边界
-        separators=["\n\n", "\n", "。", "!", "!", "?", "?", ";", ";", " ", ""],
+        # 切分优先级:先按条目(列表项)切,再按段落、句子等自然边界
+        # 这样"- PE 市盈率:..."、"- ROE 净资产收益率:..." 这类每条独立成块,
+        # 避免多个知识点混在一个大块里稀释语义、降低检索召回率
+        separators=[
+            "\n\n",     # 空行(段落)
+            "\n- ",     # 列表项(条目式知识点的关键切分边界)
+            "\n",       # 单行
+            "。",       # 句号
+            "；", ";",  # 分号
+            "，", ",",  # 逗号
+            " ",
+            "",
+        ],
     )
     return splitter.split_documents(documents)
 
