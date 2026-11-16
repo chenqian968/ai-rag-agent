@@ -99,37 +99,46 @@ def search(
     """
     import re
 
-    # 1. 语义检索,先取稍多一些候选
-    docs = vector_store.similarity_search(query, k=top_k)
-
-    # 2. 提取硬关键词
+    # 1. 提取"硬关键词":英文缩写/术语 + 中文实义词
+    #   中文没有空格分词,不能简单"去停用字后拼串"(会把一句话粘成一整串,
+    #   如"小个子显高的搭配思路"变成无意义的"小子显高搭配路",导致字面匹配失效)。
+    #   这里用 n-gram 切词:中文词多为 2~4 字,用二元组/三元组在连续汉字上滑动切分,
+    #   切出"显高""搭配""小个""个子"等片段,其中的实义词就能字面命中对应文档。
     stop_chars = set("怎么什么如何是了吗呢的都在能可不有个哪些多少为什么含义意思代表指解释理解")
     hard_keywords = re.findall(r"[A-Za-z][A-Za-z0-9+./\-]{1,}", query)  # 英文缩写/术语
-    # 中文关键词:去掉停用字,提取剩余连续中文串
-    zh = re.sub(r"[A-Za-z0-9+./\-%:：,，。？?、\s]+", "|", query)
-    for seg in zh.split("|"):
-        cleaned = "".join(c for c in seg if c not in stop_chars)
-        if len(cleaned) >= 2:
-            hard_keywords.append(cleaned)
 
-    # 只保留"有意义"的关键词:长度>=2,且不是纯停用词
+    # 提取连续中文片段,对每段做 bigram + trigram 切词
+    zh_segments = re.findall(r"[\u4e00-\u9fff]+", query)
+    for seg in zh_segments:
+        # 先去掉纯停用字,再对剩余连续串做 n-gram 切分
+        core = "".join(c for c in seg if c not in stop_chars)
+        # bigram(二元组)与 trigram(三元组)切词
+        for n in (2, 3):
+            for i in range(len(core) - n + 1):
+                gram = core[i:i + n]
+                # 过滤掉仍含停用字的片段,避免"的了""的吗"这类噪音
+                if any(c in stop_chars for c in gram):
+                    continue
+                hard_keywords.append(gram)
+
+    # 去重、去空、保留长度>=2 的关键词
     hard_keywords = [k for k in dict.fromkeys(hard_keywords) if len(k) >= 2]
-    if not hard_keywords:
-        return docs
 
-    # 3. 全量取回(演示数据量小),把"字面含关键词"的块**优先插到前面**
-    all_docs = vector_store.similarity_search(query, k=500)
-    existing = [d.page_content for d in docs]
-    keyword_hits = []
-    for d in all_docs:
-        if any(k.upper() in d.page_content.upper() for k in hard_keywords):
-            if d.page_content not in existing:
-                keyword_hits.append(d)
+    # 2. 全量取回所有块(演示数据量小,可控),按"关键词命中数"重新排序:
+    #    字面含关键词越多的块越靠前。这样对"穿搭/小个子/显高"这类主题词明确的
+    #    查询,能确保命中正确的领域块,而不是被纯向量相似度里"领域间噪音"稀释掉。
+    all_docs = vector_store.similarity_search(query, k=1000)
 
-    # 关键词命中的块放最前面(它们是最可能含答案的),语义结果排后
-    docs = keyword_hits + docs
+    def _hit_score(doc) -> int:
+        """统计块内容里命中的关键词数量(去重)。"""
+        content = doc.page_content
+        return sum(1 for k in hard_keywords if k in content)
 
-    return docs[:top_k]
+    # 命中数多的排前;命中数相同则保持语义排序(相似度降序)
+    ranked = sorted(all_docs, key=_hit_score, reverse=True)
+
+    # 3. 取前 top_k 个;若存在命中数>0 的块,优先返回它们(相关块置顶)
+    return ranked[:top_k]
 
 
 def reset_vector_store() -> None:

@@ -114,10 +114,14 @@ async def ingest(file: UploadFile = File(...)):
         # 加载 + 分块 + 向量化入库
         documents = load_documents(tmp_path)
         chunks = split_documents(documents)
+        # 把 source 元数据从"临时文件名"修正为用户上传的真实文件名,便于溯源展示
+        real_name = file.filename
+        for c in chunks:
+            c.metadata["source"] = real_name
         create_vector_store(chunks)
         return {
             "status": "ok",
-            "filename": file.filename,
+            "filename": real_name,
             "chunks": len(chunks),
         }
     except Exception as e:
