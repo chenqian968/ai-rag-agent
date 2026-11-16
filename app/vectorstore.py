@@ -78,32 +78,17 @@ def load_vector_store(collection_name: str = "knowledge_base") -> Chroma:
     )
 
 
-def search(
-    vector_store: Chroma,
-    query: str,
-    top_k: int = 4,
-) -> List[Document]:
+def _extract_keywords(query: str) -> List[str]:
     """
-    混合检索:语义相似度检索 + 关键词字面匹配兜底。
+    提取查询中的"硬关键词":英文缩写/术语 + 中文实义词。
 
-    背景:纯向量检索(语义)对"专业术语/缩写"类查询(如 ROE、PE、抄底)召回率偏低,
-    因为这些词在向量空间里容易被同领域的泛化词稀释。这里做关键词兜底:
-    提取查询中的"硬关键词"(英文缩写 + 中文专业词),把字面含这些词的块补充进结果。
-
-    参数:
-        vector_store: 向量库实例
-        query: 用户问题
-        top_k: 返回最相关的块数量
-    返回:
-        相关文档块列表(语义结果优先,关键词命中块补位)
+    中文没有空格分词,不能简单"去停用字后拼串"(会把一句话粘成一整串,
+    如"小个子显高的搭配思路"变成无意义的"小子显高搭配路",导致字面匹配失效)。
+    这里用 n-gram 切词:中文词多为 2~4 字,用二元组/三元组在连续汉字上滑动切分,
+    切出"显高""搭配""小个""个子"等片段,其中的实义词就能字面命中对应文档。
     """
     import re
 
-    # 1. 提取"硬关键词":英文缩写/术语 + 中文实义词
-    #   中文没有空格分词,不能简单"去停用字后拼串"(会把一句话粘成一整串,
-    #   如"小个子显高的搭配思路"变成无意义的"小子显高搭配路",导致字面匹配失效)。
-    #   这里用 n-gram 切词:中文词多为 2~4 字,用二元组/三元组在连续汉字上滑动切分,
-    #   切出"显高""搭配""小个""个子"等片段,其中的实义词就能字面命中对应文档。
     stop_chars = set("怎么什么如何是了吗呢的都在能可不有个哪些多少为什么含义意思代表指解释理解")
     hard_keywords = re.findall(r"[A-Za-z][A-Za-z0-9+./\-]{1,}", query)  # 英文缩写/术语
 
@@ -112,33 +97,73 @@ def search(
     for seg in zh_segments:
         # 先去掉纯停用字,再对剩余连续串做 n-gram 切分
         core = "".join(c for c in seg if c not in stop_chars)
-        # bigram(二元组)与 trigram(三元组)切词
         for n in (2, 3):
             for i in range(len(core) - n + 1):
                 gram = core[i:i + n]
-                # 过滤掉仍含停用字的片段,避免"的了""的吗"这类噪音
                 if any(c in stop_chars for c in gram):
                     continue
                 hard_keywords.append(gram)
 
-    # 去重、去空、保留长度>=2 的关键词
-    hard_keywords = [k for k in dict.fromkeys(hard_keywords) if len(k) >= 2]
+    return [k for k in dict.fromkeys(hard_keywords) if len(k) >= 2]
 
-    # 2. 全量取回所有块(演示数据量小,可控),按"关键词命中数"重新排序:
-    #    字面含关键词越多的块越靠前。这样对"穿搭/小个子/显高"这类主题词明确的
-    #    查询,能确保命中正确的领域块,而不是被纯向量相似度里"领域间噪音"稀释掉。
+
+def _recall(vector_store: Chroma, query: str, recall_k: int) -> List[Document]:
+    """
+    召回阶段:混合检索(语义 + 关键词兜底),返回 recall_k 个候选。
+
+    先用关键词命中数做一次粗排,确保主题词明确的查询能命中正确领域块
+    (而非被多领域混库时的向量噪音稀释),再交由 rerank 精排。
+    """
+    hard_keywords = _extract_keywords(query)
+
+    # 全量取回(演示数据量小,可控),按关键词命中数粗排
     all_docs = vector_store.similarity_search(query, k=1000)
 
     def _hit_score(doc) -> int:
-        """统计块内容里命中的关键词数量(去重)。"""
-        content = doc.page_content
-        return sum(1 for k in hard_keywords if k in content)
+        return sum(1 for k in hard_keywords if k in doc.page_content)
 
-    # 命中数多的排前;命中数相同则保持语义排序(相似度降序)
     ranked = sorted(all_docs, key=_hit_score, reverse=True)
+    return ranked[:recall_k]
 
-    # 3. 取前 top_k 个;若存在命中数>0 的块,优先返回它们(相关块置顶)
-    return ranked[:top_k]
+
+def search(
+    vector_store: Chroma,
+    query: str,
+    top_k: int = 4,
+    recall_k: int = 20,
+    use_rerank: bool = True,
+) -> List[Document]:
+    """
+    两阶段检索:召回(recall) + 精排(rerank)。
+
+    阶段一 召回:混合检索取 recall_k 个候选(语义相似度 + 关键词兜底)。
+    阶段二 精排:调用 rerank 模型对候选做交叉编码打分,取 top_k 个最相关块。
+
+    参数:
+        vector_store: 向量库实例
+        query: 用户问题(或改写后的查询)
+        top_k: 精排后最终返回的块数量
+        recall_k: 召回阶段返回的候选数量
+        use_rerank: 是否启用 rerank(关闭则退回"关键词粗排直接截断")
+    返回:
+        相关文档块列表(按相关性降序)
+    """
+    # 阶段一:召回
+    candidates = _recall(vector_store, query, recall_k)
+
+    # 阶段二:精排
+    if use_rerank and len(candidates) > top_k:
+        try:
+            from app.reranker import rerank
+
+            texts = [d.page_content for d in candidates]
+            indices = rerank(query, texts, top_n=top_k)
+            return [candidates[i] for i in indices]
+        except Exception:
+            # rerank 失败(如未配置 key / 网络异常)时降级为关键词粗排截断
+            pass
+
+    return candidates[:top_k]
 
 
 def reset_vector_store() -> None:

@@ -4,11 +4,15 @@
 
 ## [Unreleased]
 
+### 新增
+- **两阶段检索**：Rerank 精排（`app/reranker.py`，硅基流动 bge-reranker-v2-m3 交叉编码）
+- **查询改写**：`app/rewriter.py`，结合多轮历史做指代消解 + Multi-Query 多角度检索
+- `search_knowledge` 工具升级为「查询改写 → 多查询检索合并 → rerank 精排」三段式检索
+
 ### 规划中
-- 引入 rerank 模型对检索结果精排
-- 支持查询改写（query rewriting）
-- 对话记忆管理（历史压缩/摘要）
-- 流式响应与更完整的前端体验
+- 引入 BM25 倒排索引 + RRF 融合（正式化混合检索）
+- 对话记忆管理（滑动窗口 + 摘要压缩）
+- 流式响应（SSE）与更完整的前端体验
 
 ## [1.0.0] - 2026-11-16
 

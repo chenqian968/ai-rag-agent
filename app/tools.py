@@ -1,5 +1,5 @@
 """
-Agent 工具定义(第 3 周:Agent 化)
+Agent 工具定义(第 3 周:Agent 化 + 迭代升级)
 
 给 Agent 提供一组"工具",让它通过 Function Calling 自主决定调用哪个。
 每个工具都是一个函数 + 一段清晰的描述,大模型根据描述判断何时调用。
@@ -8,9 +8,15 @@ Agent 工具定义(第 3 周:Agent 化)
 - 工具即"能力边界":Agent 只能做我们允许它做的事
 - 检索工具(search_knowledge)让 Agent 能查知识库
 - 计算器(calculate)演示"非检索类工具",体现 Agent 的多工具调度能力
+
+迭代升级(检索链路增强):
+- search_knowledge 内置"查询改写 + 多查询检索 + rerank 精排"三段式检索:
+  1. 结合多轮历史把口语化/指代性问题改写成完整查询;
+  2. Multi-Query 生成多角度查询,分别检索后合并去重;
+  3. rerank 对合并候选精排,取 top_k。
 """
 
-from typing import List
+from typing import List, Optional
 
 from langchain_core.tools import tool
 
@@ -20,6 +26,17 @@ from app.rag import COLLECTION_NAME, TOP_K
 
 # 全局向量库实例(懒加载,避免每次调用都重新初始化)
 _vector_store = None
+
+# 模块级"多轮历史上下文":Agent 运行前由 run_agent 注入,
+# 供 search_knowledge 做查询改写时还原指代(如"它"指代上文)。
+# 用模块级变量是因为 LangChain @tool 只能接收 LLM 传入的参数,拿不到对话历史。
+_current_history: Optional[List[str]] = None
+
+
+def set_history(history: Optional[List[str]]) -> None:
+    """设置当前对话历史(由 agent.run_agent 在调用前注入)。"""
+    global _current_history
+    _current_history = history
 
 
 def _get_vector_store():
@@ -46,7 +63,35 @@ def search_knowledge(query: str) -> str:
         检索到的相关文本块(带来源标注)
     """
     vector_store = _get_vector_store()
-    docs = search(vector_store, query, top_k=TOP_K)
+
+    # 1. 查询改写(结合多轮历史,还原指代)
+    queries = [query]
+    try:
+        from app.rewriter import rewrite_query, multi_query
+        rewritten = rewrite_query(query, history=_current_history)
+        # 2. 多查询扩展(原问题 + 多角度查询)
+        queries = multi_query(rewritten)
+    except Exception:
+        # 改写失败(如未配置 key)时降级为直接用原问题检索
+        queries = [query]
+
+    # 3. 多查询检索 + 合并去重
+    merged: dict = {}  # 用 page_content 去重
+    for q in queries:
+        for doc in search(vector_store, q, top_k=TOP_K):
+            if doc.page_content not in merged:
+                merged[doc.page_content] = doc
+
+    # 4. 对合并候选做 rerank 精排(以改写后的主查询为基准)
+    docs = list(merged.values())
+    try:
+        from app.reranker import rerank
+        texts = [d.page_content for d in docs]
+        indices = rerank(queries[0], texts, top_n=TOP_K)
+        docs = [docs[i] for i in indices]
+    except Exception:
+        docs = docs[:TOP_K]
+
     if not docs:
         return "未检索到相关内容。"
 

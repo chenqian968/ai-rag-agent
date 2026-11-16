@@ -199,6 +199,16 @@ def run_agent(user_input: str, history: List[BaseMessage] = None) -> str:
     """
     messages = list(history or []) + [HumanMessage(content=user_input)]
 
+    # 把历史注入工具上下文,供 search_knowledge 做查询改写时还原指代(如"它")
+    from app import tools
+    history_text = []
+    for m in (history or []):
+        role = "用户" if getattr(m, "type", "") == "human" else "助手"
+        content = getattr(m, "content", "")
+        if content:
+            history_text.append(f"{role}: {content}")
+    tools.set_history(history_text)
+
     # 执行图,直到结束
     final_state = AGENT_GRAPH.invoke({"messages": messages})
 
