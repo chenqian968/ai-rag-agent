@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="660" viewBox="0 0 880 660" font-family="-apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <style>
+    .title { font-size: 18px; font-weight: 600; fill: #2C2C2A; }
+    .actor { font-size: 14px; font-weight: 600; }
+    .lifeline { stroke: #B4B2A9; stroke-width: 1; stroke-dasharray: 4,4; }
+    .msg { stroke: #185FA5; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+    .msg-ret { stroke: #0F6E56; stroke-width: 1.5; fill: none; marker-end: url(#arrow); stroke-dasharray: 6,3; }
+    .msgtxt { font-size: 12px; }
+  </style>
+
+  <text class="title" x="440" y="30" text-anchor="middle" fill="#111111">一次提问的完整时序</text>
+
+  <!-- Actor 头部 -->
+  <g>
+    <rect x="40" y="55" width="120" height="40" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+    <text class="actor" x="100" y="80" text-anchor="middle" fill="#3C3489">用户</text>
+  </g>
+  <g>
+    <rect x="230" y="55" width="120" height="40" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="1"/>
+    <text class="actor" x="290" y="80" text-anchor="middle" fill="#0C447C">FastAPI</text>
+  </g>
+  <g>
+    <rect x="420" y="55" width="120" height="40" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+    <text class="actor" x="480" y="80" text-anchor="middle" fill="#085041">Agent</text>
+  </g>
+  <g>
+    <rect x="610" y="55" width="120" height="40" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+    <text class="actor" x="670" y="80" text-anchor="middle" fill="#085041">工具(检索)</text>
+  </g>
+  <g>
+    <rect x="740" y="55" width="120" height="40" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="1"/>
+    <text class="actor" x="800" y="80" text-anchor="middle" fill="#633806">Chroma</text>
+  </g>
+
+  <!-- 生命线 -->
+  <line class="lifeline" x1="100" y1="95" x2="100" y2="620"/>
+  <line class="lifeline" x1="290" y1="95" x2="290" y2="620"/>
+  <line class="lifeline" x1="480" y1="95" x2="480" y2="620"/>
+  <line class="lifeline" x1="670" y1="95" x2="670" y2="620"/>
+  <line class="lifeline" x1="800" y1="95" x2="800" y2="620"/>
+
+  <!-- 1. 用户提问 -->
+  <path class="msg" d="M100 130 L290 130"/>
+  <text class="msgtxt" x="195" y="120" text-anchor="middle" fill="#185FA5">1. 提问（带历史）</text>
+
+  <!-- 2. FastAPI -> Agent -->
+  <path class="msg" d="M290 170 L480 170"/>
+  <text class="msgtxt" x="385" y="160" text-anchor="middle" fill="#185FA5">2. run_agent(message, history)</text>
+
+  <!-- ReAct 循环框 -->
+  <rect x="460" y="190" width="40" height="360" rx="6" fill="#E1F5EE" opacity="0.4"/>
+
+  <!-- 3. Agent 判断 -->
+  <path class="msg" d="M480 210 L670 210"/>
+  <text class="msgtxt" x="575" y="200" text-anchor="middle" fill="#185FA5">3. 决策：调用 search_knowledge</text>
+
+  <!-- 4. 工具 -> Chroma -->
+  <path class="msg" d="M670 250 L800 250"/>
+  <text class="msgtxt" x="735" y="240" text-anchor="middle" fill="#185FA5">4. 混合检索</text>
+
+  <!-- 5. Chroma 返回 -->
+  <path class="msg-ret" d="M800 290 L670 290"/>
+  <text class="msgtxt" x="735" y="282" text-anchor="middle" fill="#0F6E56">5. Top-K 文本块（带来源）</text>
+
+  <!-- 6. 工具返回 -->
+  <path class="msg-ret" d="M670 330 L480 330"/>
+  <text class="msgtxt" x="575" y="322" text-anchor="middle" fill="#0F6E56">6. [资料N] 标注的片段</text>
+
+  <!-- 7. Agent 继续推理（循环） -->
+  <path class="msg" d="M480 370 L480 410" />
+  <text class="msgtxt" x="495" y="395" text-anchor="middle" fill="#185FA5">7. 基于结果继续推理</text>
+
+  <!-- 8. Agent 生成回答 -->
+  <path class="msg-ret" d="M480 450 L290 450"/>
+  <text class="msgtxt" x="385" y="440" text-anchor="middle" fill="#0F6E56">8. 最终回答（含引用）</text>
+
+  <!-- 9. FastAPI 返回 -->
+  <path class="msg-ret" d="M290 490 L100 490"/>
+  <text class="msgtxt" x="195" y="480" text-anchor="middle" fill="#0F6E56">9. answer 返回</text>
+
+  <!-- 说明 -->
+  <text class="msgtxt" x="480" y="560" text-anchor="middle" fill="#5F5E5A">ReAct 循环：Agent 可多次调用工具（3~7 步循环），直到不再有 tool_calls</text>
+  <text class="msgtxt" x="480" y="580" text-anchor="middle" fill="#5F5E5A">若用户问计算问题，步骤 3 改为调用 calculate 工具</text>
+</svg>
